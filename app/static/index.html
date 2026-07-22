@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Healthcare VR Training Analytics</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; margin: 2rem; background: #0f172a; color: #e2e8f0; }
+  h1 { font-size: 1.4rem; }
+  select, .card { margin-bottom: 1rem; }
+  .card { background: #1e293b; border-radius: 10px; padding: 1rem 1.25rem; display: inline-block; margin-right: 1rem; min-width: 160px; }
+  .card b { display: block; font-size: 1.5rem; }
+  canvas { max-width: 640px; }
+</style>
+</head>
+<body>
+  <h1>Healthcare VR Training Analytics</h1>
+  <select id="scenario">
+    <option value="iud_insertion_vr">VR Pain/Anxiety — IUD Insertion</option>
+    <option value="leopold_maneuver_holographic">Holographic Learning — Leopold's Maneuvers</option>
+    <option value="labour_pushing_vr">VR Pushing Training — Second Stage of Labour</option>
+  </select>
+
+  <div id="cards"></div>
+  <canvas id="chart"></canvas>
+
+<script>
+async function load(scenario) {
+  const res = await fetch(`/analytics/${scenario}`);
+  const s = await res.json();
+
+  document.getElementById('cards').innerHTML = `
+    <div class="card">Sessions<b>${s.n_sessions}</b></div>
+    <div class="card">Trainees<b>${s.n_trainees}</b></div>
+    <div class="card">Mean pre-score<b>${s.mean_pre}</b></div>
+    <div class="card">Mean post-score<b>${s.mean_post}</b></div>
+    <div class="card">Effect size (d)<b>${s.effect_size_cohens_d}</b></div>
+    <div class="card">Error trend/session<b>${s.error_trend_per_session}</b></div>
+  `;
+
+  const ctx = document.getElementById('chart');
+  if (window._chart) window._chart.destroy();
+  window._chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Pre-score', 'Post-score'],
+      datasets: [{ label: scenario, data: [s.mean_pre, s.mean_post], backgroundColor: ['#f87171', '#34d399'] }]
+    },
+    options: { scales: { y: { beginAtZero: true, max: 10 } } }
+  });
+}
+
+document.getElementById('scenario').addEventListener('change', e => load(e.target.value));
+load('iud_insertion_vr');
+</script>
+</body>
+</html>
